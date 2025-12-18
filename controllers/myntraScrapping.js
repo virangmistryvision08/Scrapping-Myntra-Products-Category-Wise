@@ -36,7 +36,6 @@ const scrapeMyntraProduct = async (req, res) => {
 
       return Array.from(nodes).map((el) => ({
         href: el.href,
-        html: el.innerHTML,
       }));
     });
 
@@ -49,36 +48,77 @@ const scrapeMyntraProduct = async (req, res) => {
 
     // Product Page Url
     async function tabsLink(browser, url) {
-      const page1 = await createPage(browser);
+      let pageNumber = 1;
+      const MAX_PAGES = 2; // limit
+      const perPage = 5;
+    //   let pageinationFinisher = false;
 
-      console.log(`Opening ${url} URL...`);
-      await page1.goto(url, {
-        waitUntil: "networkidle2",
-        timeout: 60000,
-      });
+      while (pageNumber <= MAX_PAGES) {
+        const page = await createPage(browser);
+        const paginatedUrl = `${url}?p=${pageNumber}&rows=${perPage}`;
 
-      // Myntra is CSR → wait for mountRoot
-      await page1.waitForSelector('ul[class*="results-base"]', {
-        timeout: 30000,
-      });
+        console.log(`Opening Page ${pageNumber}: ${paginatedUrl}`);
 
-      // Extract elements
-      const productLink = await page1.evaluate(() => {
-        const nodes = document.querySelectorAll(
-          'li[class="product-base"] > a'
-        );
+        //   const page = await createPage(browser);
 
-        return Array.from(nodes).map((el) => ({
-          href: el.href,
-          html: el.innerHTML,
-        }));
-      });
+        //   console.log(`Opening ${url} URL...`);
+        try {
+        //   if (!pageinationFinisher) {
+            await page.goto(paginatedUrl, {
+              waitUntil: "networkidle2",
+              timeout: 60000,
+            });
+        //   }
 
-      console.log(`Found ${productLink.length} Products element(s)\n`);
+          //   try {
+          await page.waitForSelector('[id*="mountRoot"]', {
+            timeout: 30000,
+          });
+          //   } catch {
+          //     console.log("No product container found!");
+          //     await page.close();
+          //     break;
+          //   }
 
-      // SCRAPE PRODUCTS ONE BY ONE
-      for (const item of productLink) {
-        await scrapeSingleProduct(browser, item.href);
+          // Extract elements
+          const productLink = await page.evaluate(() => {
+            const nodes = document.querySelectorAll(
+              'li[class="product-base"] > a'
+            );
+
+            return Array.from(nodes).map((el) => ({
+              href: el.href,
+            }));
+          });
+
+          if (!productLink.length) {
+            console.log("No more products. Pagination finished.");
+            await page.close();
+            break;
+          }
+
+          console.log(
+            `Page ${pageNumber} → Found ${productLink.length} products`
+          );
+
+          // console.log(`Found ${productLink.length} Products element(s)\n`);
+
+          // SCRAPE PRODUCTS ONE BY ONE
+          for (const item of productLink.slice(0, perPage)) {
+            await scrapeSingleProduct(browser, item.href);
+          }
+        } catch (err) {
+          console.log(`❌ Page ${pageNumber} failed:`, err.message);
+          break;
+        } finally {
+          // ALWAYS close the page after finishing that page
+          await page.close();
+        //   pageinationFinisher = true;
+          console.log(`🧹 Closed Page ${pageNumber}`);
+        }
+
+        pageNumber++;
+        // await page.close();
       }
     }
 
