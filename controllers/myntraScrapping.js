@@ -2,10 +2,13 @@ require("dotenv").config();
 const puppeteer = require("puppeteer");
 const { scrapeSingleProduct } = require("../scraper/scrapeSingleProduct");
 const { createPage } = require("../scraper/createPage");
+const { openMenDropdown } = require("../scraper/openingMenDropDown");
 
 const CATEGORY_URL = process.env.CATEGORY_URL;
 
 const scrapeMyntraProduct = async (req, res) => {
+  const visitedCategories = new Set();
+
   const browser = await puppeteer.launch({
     headless: false,
     args: [
@@ -16,121 +19,128 @@ const scrapeMyntraProduct = async (req, res) => {
   });
 
   try {
-    // Category Page
-    const page = await createPage(browser);
+    /* ---------------- OPEN HOME ---------------- */
+    const homePage = await createPage(browser);
 
-    console.log("Opening URL...");
-    await page.goto(CATEGORY_URL, {
+    console.log("🏠 Opening Myntra...");
+    await homePage.goto(CATEGORY_URL, {
       waitUntil: "networkidle2",
       timeout: 60000,
     });
 
-    // Myntra is CSR → wait for mountRoot
-    await page.waitForSelector('[id*="desktop-header-cnt"]', {
-      timeout: 30000,
+    /* ---------------- OPEN MEN DROPDOWN ---------------- */
+    await openMenDropdown(homePage);
+
+    /* ---------------- COLLECT CATEGORY URLS ---------------- */
+    const categoryTabs = await homePage.evaluate(() => {
+      return Array.from(
+        document.querySelectorAll(".desktop-categoryContainer a[href]")
+      ).map((a) => a.href);
+      // .filter((href) => href.includes("/men-"));
     });
 
-    // Extract elements
-    const categoryTabs = await page.evaluate(() => {
-      const nodes = document.querySelectorAll('ul[data-reactid="27"] > li > a');
+    console.log(`📂 Found ${categoryTabs.length} categories\n`);
 
-      return Array.from(nodes).map((el) => ({
-        href: el.href,
-      }));
+    /* ---------------- LOOP CATEGORIES ---------------- */
+    for (const categoryUrl of categoryTabs) {
+      if (visitedCategories.has(categoryUrl)) continue;
+
+      visitedCategories.add(categoryUrl);
+      console.log(`\n📁 CATEGORY → ${categoryUrl}`);
+
+      await scrapeCategory(browser, categoryUrl);
+
+      // 🔁 Re-open navbar for next category
+      await homePage.bringToFront();
+      await openMenDropdown(homePage);
+    }
+
+    await homePage.close();
+
+    return res.status(200).json({
+      status: true,
+      message: "✅ All products scraped successfully",
     });
-
-    console.log(`Found ${categoryTabs.length} Category element(s)\n`);
-
-    // SCRAPE PRODUCTS ONE BY ONE (SAFE)
-    for (const item of categoryTabs) {
-      await tabsLink(browser, item.href);
-    }
-
-    // Product Page Url
-    async function tabsLink(browser, url) {
-      let pageNumber = 1;
-      const MAX_PAGES = 2; // limit
-      const perPage = 5;
-    //   let pageinationFinisher = false;
-
-      while (pageNumber <= MAX_PAGES) {
-        const page = await createPage(browser);
-        const paginatedUrl = `${url}?p=${pageNumber}&rows=${perPage}`;
-
-        console.log(`Opening Page ${pageNumber}: ${paginatedUrl}`);
-
-        //   const page = await createPage(browser);
-
-        //   console.log(`Opening ${url} URL...`);
-        try {
-        //   if (!pageinationFinisher) {
-            await page.goto(paginatedUrl, {
-              waitUntil: "networkidle2",
-              timeout: 60000,
-            });
-        //   }
-
-          //   try {
-          await page.waitForSelector('[id*="mountRoot"]', {
-            timeout: 30000,
-          });
-          //   } catch {
-          //     console.log("No product container found!");
-          //     await page.close();
-          //     break;
-          //   }
-
-          // Extract elements
-          const productLink = await page.evaluate(() => {
-            const nodes = document.querySelectorAll(
-              'li[class="product-base"] > a'
-            );
-
-            return Array.from(nodes).map((el) => ({
-              href: el.href,
-            }));
-          });
-
-          if (!productLink.length) {
-            console.log("No more products. Pagination finished.");
-            await page.close();
-            break;
-          }
-
-          console.log(
-            `Page ${pageNumber} → Found ${productLink.length} products`
-          );
-
-          // console.log(`Found ${productLink.length} Products element(s)\n`);
-
-          // SCRAPE PRODUCTS ONE BY ONE
-          for (const item of productLink.slice(0, perPage)) {
-            await scrapeSingleProduct(browser, item.href);
-          }
-        } catch (err) {
-          console.log(`❌ Page ${pageNumber} failed:`, err.message);
-          break;
-        } finally {
-          // ALWAYS close the page after finishing that page
-          await page.close();
-        //   pageinationFinisher = true;
-          console.log(`🧹 Closed Page ${pageNumber}`);
-        }
-
-        pageNumber++;
-        // await page.close();
-      }
-    }
-
-    return res
-      .status(200)
-      .json({ status: true, message: "All Products Save in Database." });
   } catch (err) {
-    console.error("❌ Error:", err.message);
+    console.error("❌ Fatal Error:", err.message);
     return res.status(500).json({ status: false, message: err.message });
   } finally {
     await browser.close();
   }
 };
+
+/* ================= CATEGORY SCRAPER ================= */
+async function scrapeCategory(browser, categoryUrl) {
+  const page = await createPage(browser);
+
+  console.log(`🌐 Opening category → ${categoryUrl}`);
+  await page.goto(categoryUrl, {
+    waitUntil: "networkidle2",
+    timeout: 60000,
+  });
+
+  await page.waitForSelector("li.product-base", { timeout: 30000 });
+
+  let pageCount = 1;
+
+  while (true) {
+    console.log(`📄 Scraping page ${pageCount}`);
+
+    /* -------- SCRAPE PRODUCTS -------- */
+    const productLinks = await page.evaluate(() =>
+      Array.from(document.querySelectorAll("li.product-base > a")).map(
+        (el) => el.href
+      )
+    );
+
+    console.log(`🛍 Found ${productLinks.length} products`);
+
+    for (const href of productLinks) {
+      await scrapeSingleProduct(browser, href);
+    }
+
+    /* -------- CHECK NEXT BUTTON -------- */
+    const hasNext = await page.$(".pagination-next:not(.pagination-disabled)");
+
+    if (!hasNext) {
+      console.log("⛔ No next page → category completed");
+      break;
+    }
+
+    console.log("➡️ Clicking NEXT (visible click)");
+
+    /* -------- SCROLL INTO VIEW -------- */
+    await page.evaluate(() => {
+      document
+        .querySelector(".pagination-next:not(.pagination-disabled)")
+        .scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+
+    await page.waitForTimeout(800);
+
+    /* -------- CLICK + WAIT FOR NEW PRODUCTS -------- */
+    const firstProductBefore = await page.evaluate(
+      () => document.querySelector("li.product-base > a")?.href
+    );
+
+    await Promise.all([
+      page.click(".pagination-next:not(.pagination-disabled)"),
+      page.waitForFunction(
+        (prev) => {
+          const first = document.querySelector("li.product-base > a")?.href;
+          return first && first !== prev;
+        },
+        { timeout: 60000 },
+        firstProductBefore
+      ),
+    ]);
+
+    console.log("✅ Next page loaded");
+
+    pageCount++;
+  }
+
+  await page.close();
+}
 
 module.exports = { scrapeMyntraProduct };
