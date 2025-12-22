@@ -16,6 +16,7 @@ const scrapeMyntraProduct = async (req, res) => {
       "--disable-setuid-sandbox",
       "--disable-blink-features=AutomationControlled",
     ],
+    defaultViewport: null,
   });
 
   try {
@@ -34,8 +35,8 @@ const scrapeMyntraProduct = async (req, res) => {
     /* ---------------- COLLECT CATEGORY URLS ---------------- */
     const categoryTabs = await homePage.evaluate(() => {
       return Array.from(
-        document.querySelectorAll(".desktop-categoryContainer a[href]")
-      ).map((a) => a.href);
+        document.querySelectorAll(".desktop-categoryContainer ul.desktop-navBlock[data-reactid='27'] a[href]")
+      ).map((a) => a.href)
       // .filter((href) => href.includes("/men-"));
     });
 
@@ -52,7 +53,8 @@ const scrapeMyntraProduct = async (req, res) => {
 
       // 🔁 Re-open navbar for next category
       await homePage.bringToFront();
-      await openMenDropdown(homePage);
+      const pathOnly = new URL(categoryUrl).pathname;
+      await openMenDropdown(homePage, pathOnly);
     }
 
     await homePage.close();
@@ -100,7 +102,8 @@ async function scrapeCategory(browser, categoryUrl) {
     }
 
     /* -------- CHECK NEXT BUTTON -------- */
-    const hasNext = await page.$(".pagination-next:not(.pagination-disabled)");
+    const hasNext = await page.$(".pagination-next");
+    // :not(.pagination-disabled)
 
     if (!hasNext) {
       console.log("⛔ No next page → category completed");
@@ -112,7 +115,8 @@ async function scrapeCategory(browser, categoryUrl) {
     /* -------- SCROLL INTO VIEW -------- */
     await page.evaluate(() => {
       document
-        .querySelector(".pagination-next:not(.pagination-disabled)")
+        .querySelector(".pagination-next")
+        // :not(.pagination-disabled)
         .scrollIntoView({ behavior: "smooth", block: "center" });
     });
 
@@ -124,7 +128,8 @@ async function scrapeCategory(browser, categoryUrl) {
     );
 
     await Promise.all([
-      page.click(".pagination-next:not(.pagination-disabled)"),
+      page.click(".pagination-next"),
+      // :not(.pagination-disabled)
       page.waitForFunction(
         (prev) => {
           const first = document.querySelector("li.product-base > a")?.href;

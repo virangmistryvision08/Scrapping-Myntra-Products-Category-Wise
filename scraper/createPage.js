@@ -11,7 +11,7 @@ async function createPage(browser) {
     referer: "https://www.myntra.com/",
   });
 
-  await page.setViewport({ width: 1366, height: 768 });
+  // await page.setViewport({ width: 100, height: 768 });
   return page;
 }
 
