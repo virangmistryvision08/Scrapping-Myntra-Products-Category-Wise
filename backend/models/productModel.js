@@ -13,20 +13,20 @@ const productSchema = new mongoose.Schema(
       trim: true,
     },
 
-    price: {
-      type: Number,
-      trim: true,
-    },
+    // price: {
+    //   type: Number,
+    //   trim: true,
+    // },
 
-    original_price: {
-      type: Number,
-      trim: true,
-    },
+    // original_price: {
+    //   type: Number,
+    //   trim: true,
+    // },
 
-    discount: {
-      type: String,
-      trim: true,
-    },
+    // discount: {
+    //   type: String,
+    //   trim: true,
+    // },
 
     rating: {
       type: Number,
@@ -60,6 +60,7 @@ const productSchema = new mongoose.Schema(
     product_url: {
       type: String,
       unique: true,
+      index: true,
     },
   },
   {

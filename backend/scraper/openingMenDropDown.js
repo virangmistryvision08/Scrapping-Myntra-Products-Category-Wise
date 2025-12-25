@@ -43,7 +43,7 @@ const openMenDropdown = async (page, url) => {
     await page.waitForTimeout(600);
   }
 
-  console.log("✅ MEN dropdown opened & categories clickable");
+  console.log("✅ MEN dropdown opened & category click.");
 };
 
 module.exports = { openMenDropdown };

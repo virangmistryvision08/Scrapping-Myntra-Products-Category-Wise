@@ -1,4 +1,4 @@
-require("dotenv").config();
+// require("dotenv").config();
 const puppeteer = require("puppeteer");
 const { scrapeSingleProduct } = require("../scraper/scrapeSingleProduct");
 const { createPage } = require("../scraper/createPage");
@@ -6,7 +6,7 @@ const { openMenDropdown } = require("../scraper/openingMenDropDown");
 
 const CATEGORY_URL = process.env.CATEGORY_URL;
 
-const scrapeMyntraProduct = async (req, res) => {
+const scrapeMyntraProduct = async () => {
   const visitedCategories = new Set();
 
   const browser = await puppeteer.launch({
@@ -59,13 +59,8 @@ const scrapeMyntraProduct = async (req, res) => {
 
     await homePage.close();
 
-    return res.status(200).json({
-      status: true,
-      message: "✅ All products scraped successfully",
-    });
   } catch (err) {
     console.error("❌ Fatal Error:", err.message);
-    return res.status(500).json({ status: false, message: err.message });
   } finally {
     await browser.close();
   }
