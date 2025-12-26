@@ -8,25 +8,17 @@ const Dashboard = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // 🔹 dropdown sorting (title / brand)
-  const [sortMode, setSortMode] = useState("TITLE_AZ");
-
-  // 🔹 numeric toggle sorting
-  const [sortBy, setSortBy] = useState("");
-  const [order, setOrder] = useState("desc");
-
+  const [sortBy, setSortBy] = useState("priceChange");
+  const [order, setOrder] = useState("asc");
   const [trend, setTrend] = useState("");
 
   const fetchWeeklyReport = async () => {
     try {
       setLoading(true);
       const res = await axios.get(
-        `http://localhost:${
-          import.meta.env.VITE_BACKEND_PORT
-        }/api/weekly-report`,
+        `http://localhost:${import.meta.env.VITE_BACKEND_PORT}/api/weekly-report`,
         {
           params: {
-            sortMode,
             sortBy,
             order,
             trend: trend || undefined,
@@ -43,7 +35,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchWeeklyReport();
-  }, [sortMode, sortBy, order, trend]);
+  }, [sortBy, order, trend]);
 
   return (
     <>
@@ -55,50 +47,26 @@ const Dashboard = () => {
             Myntra Price Analysis Report
           </h2>
 
-          <div className="flex gap-3 items-center">
-            {/* 🔹 Dropdown: Title / Brand sorting */}
-            <div className="flex items-center gap-3">
-              <h1 className="text-lg font-semibold text-gray-600">Sorting (Title & Brand) - </h1>
-              <select
-                value={sortMode}
-                onChange={(e) => {
-                  setSortMode(e.target.value);
-
-                  // 🔥 reset numeric toggle
-                  setSortBy("");
-                  setOrder("desc");
-                }}
-                className="border px-3 py-2 rounded"
-              >
-                <option value="">Default</option>
-                <option value="TITLE_AZ">Title – A → Z</option>
-                <option value="TITLE_ZA">Title – Z → A</option>
-                <option value="BRAND_AZ">Brand – A → Z</option>
-                <option value="BRAND_ZA">Brand – Z → A</option>
-              </select>
-            </div>
-
-            {/* 🔹 Trend filter */}
-            <div className="flex items-center gap-3">
-              <h1 className="text-lg font-semibold text-gray-600">Trend Filter -</h1>
-              <select
-                value={trend}
-                onChange={(e) => setTrend(e.target.value)}
-                className="border px-3 py-2 rounded w-56"
-              >
-                <option value="">All Trends</option>
-                <option value="INCREASED">Trend – Increase</option>
-                <option value="DECREASED">Trend – Decrease</option>
-                <option value="NO_CHANGE">Trend – No Change</option>
-              </select>
-            </div>
+          {/* Trend Filter */}
+          <div className="flex items-center gap-3">
+            <h1 className="text-lg font-semibold text-gray-600">
+              Trend Filters -
+            </h1>
+            <select
+              value={trend}
+              onChange={(e) => setTrend(e.target.value)}
+              className="border px-3 py-2 rounded w-56"
+            >
+              <option value="">All Trends</option>
+              <option value="INCREASED">Trend - Increase Price</option>
+              <option value="DECREASED">Trend - Decrease Price</option>
+              <option value="NO_CHANGE">Trend - No Change</option>
+            </select>
           </div>
         </div>
 
-        {/* Chart */}
         <PriceChangeChart data={data} loading={loading} />
 
-        {/* Table */}
         <PriceTable
           data={data}
           loading={loading}

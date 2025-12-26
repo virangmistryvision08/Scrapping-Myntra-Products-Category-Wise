@@ -3,8 +3,8 @@ const {
   scrapeMyntraProduct,
 } = require("../controllers/myntraScrappingController");
 
-// Runs every day at 2 PM
-cron.schedule("01 15 * * *", async () => {
+// Runs every day at 1 PM
+cron.schedule("0 13 * * *", async () => {
   console.log("⏰ Daily Myntra scraping started");
   await scrapeMyntraProduct();
 });

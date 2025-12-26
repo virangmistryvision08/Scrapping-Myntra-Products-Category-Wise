@@ -1,29 +1,8 @@
 const PriceHistory = require("../models/priceHistoryModel");
 
-/* ---------------- STRING SORT CONFIG ---------------- */
-const SORT_MODE_CONFIG = {
-  TITLE_AZ: { field: "product.title", order: 1 },
-  TITLE_ZA: { field: "product.title", order: -1 },
-  BRAND_AZ: { field: "product.brand", order: 1 },
-  BRAND_ZA: { field: "product.brand", order: -1 },
-};
-
-/* ---------------- NUMERIC SORT FIELDS ---------------- */
-const NUMERIC_FIELDS = [
-  "oldPrice",
-  "latestPrice",
-  "priceChange",
-  "percentChange",
-];
-
 const weeklyPriceAnalysis = async (req, res) => {
   try {
-    const {
-      sortMode = "TITLE_AZ",
-      sortBy = "",
-      order = "desc",
-      trend,
-    } = req.query;
+    const { sortBy = "priceChange", order = "desc", trend } = req.query;
 
     const pipeline = [
       { $sort: { scrape_date: 1 } },
@@ -90,15 +69,11 @@ const weeklyPriceAnalysis = async (req, res) => {
 
     if (trend) pipeline.push({ $match: { trend } });
 
-    let sortStage = { priceChange: -1 };
-
-    if (NUMERIC_FIELDS.includes(sortBy)) {
-      sortStage = { [sortBy]: order === "asc" ? 1 : -1 };
-    } else if (SORT_MODE_CONFIG[sortMode]) {
-      sortStage = {
-        [SORT_MODE_CONFIG[sortMode].field]:
-          SORT_MODE_CONFIG[sortMode].order,
-      };
+    let sortStage = {};
+    if (["title", "brand"].includes(sortBy)) {
+      sortStage[`product.${sortBy}`] = order === "asc" ? 1 : -1;
+    } else {
+      sortStage[sortBy] = order === "asc" ? 1 : -1;
     }
 
     pipeline.push({ $sort: sortStage });
