@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Price Alert</title>
+</head>
+
+<body style="margin:0;padding:0;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding:30px 10px;">
+        <table width="620" cellpadding="0" cellspacing="0"
+          style="background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.25);">
+
+          <!-- HEADER -->
+          <tr>
+            <td style="padding:24px;background:linear-gradient(135deg,#91b4ff,#5a8cf8,#4f46e5);color:#fff;text-align:center;">
+              <h1 style="margin:0;font-size:26px;">📉 Price Alert</h1>
+              <p style="margin:6px 0 0;font-size:14px;opacity:0.9;">
+                We detected a price change
+              </p>
+            </td>
+          </tr>
+
+          <!-- PRODUCT INFO -->
+          <tr>
+            <td style="padding:26px;">
+              <h2 style="margin:0 0 6px;font-size:15px;color:#111827;">
+                {{PRODUCT_TITLE}}
+              </h2>
+              <br>
+              <p style="margin:0 0 20px;color:#6b7280;">
+                Brand: {{BRAND}}
+              </p>
+
+              <!-- PRICE BOX -->
+              <table width="100%" cellpadding="0" cellspacing="0"
+                style="border-collapse:collapse;">
+                <tr>
+                  <td style="padding:14px;border:1px solid #e5e7eb;">
+                    Old Price
+                  </td>
+                  <td style="padding:14px;border:1px solid #e5e7eb;">
+                    ₹{{OLD_PRICE}}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px;border:1px solid #e5e7eb;">
+                    New Price
+                  </td>
+                  <td style="padding:14px;border:1px solid #e5e7eb;">
+                    ₹{{NEW_PRICE}}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px;border:1px solid #e5e7eb;font-weight:bold;">
+                    Change
+                  </td>
+                  <td style="padding:14px;border:1px solid #e5e7eb;
+                    color:{{CHANGE_COLOR}};font-weight:bold;">
+                    {{CHANGE_SYMBOL}}₹{{CHANGE_AMOUNT}} ({{CHANGE_PERCENT}}%)
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA -->
+              <div style="text-align:center;margin-top:30px;">
+                <a href="{{PRODUCT_URL}}" target="_blank"
+                  style="display:inline-block;padding:14px 28px;
+                  background:linear-gradient(135deg,#91b4ff,#5a8cf8,#4f46e5);color:#fff;text-decoration:none;
+                  border-radius:30px;font-weight:bold;">
+                  View Product →
+                </a>
+              </div>
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="background:#f8fafc;padding:16px;text-align:center;
+              font-size:12px;color:#94a3b8;">
+              You are receiving this email because price tracking is enabled.<br/>
+              © {{CURRENT_YEAR}} Price Tracker
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -1,6 +1,7 @@
 const { createPage } = require("./createPage");
 const Product = require("../models/productModel");
 const PriceHistory = require("../models/priceHistoryModel");
+const { checkAndSendPriceAlert } = require("../services/priceAlertService");
 
 async function scrapeSingleProduct(browser, url) {
   const page = await createPage(browser);
@@ -139,6 +140,10 @@ async function scrapeSingleProduct(browser, url) {
       },
       { upsert: true }
     );
+
+    // Check And Send Price ALERT
+    await checkAndSendPriceAlert(product._id);
+
   } catch (err) {
     console.error("❌ Product error:", err.message);
   } finally {
