@@ -1,4 +1,3 @@
-// require("dotenv").config();
 const puppeteer = require("puppeteer");
 const { scrapeSingleProduct } = require("../scraper/scrapeSingleProduct");
 const { createPage } = require("../scraper/createPage");
