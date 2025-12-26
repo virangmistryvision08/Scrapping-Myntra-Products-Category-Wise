@@ -139,36 +139,6 @@ async function scrapeSingleProduct(browser, url) {
       },
       { upsert: true }
     );
-
-    // DUPLICATE CHECK
-    // const exists = await Product.findOne({ product_url: product.product_url });
-    // if (exists) {
-    //   await exists.updateOne(
-    //     { product_url: product.product_url },
-    //     product,
-    //     { upsert: true, new: true }
-    //   );
-
-    //   const today = new Date();
-    //   today.setHours(0, 0, 0, 0);
-
-    //   await PriceHistory.updateOne(
-    //     { product_id: exists._id, scrape_date: today },
-    //     {
-    //       $setOnInsert: {
-    //         price: product.price,
-    //         original_price: product.original_price,
-    //         discount: product.discount,
-    //       },
-    //     },
-    //     { upsert: true }
-    //   );
-
-    //   console.log("⚠ Already exists:", product.product_url);
-    // } else {
-    //   await Product.create(product);
-    //   console.log("✔ Saved:", product.title);
-    // }
   } catch (err) {
     console.error("❌ Product error:", err.message);
   } finally {

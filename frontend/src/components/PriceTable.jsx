@@ -9,14 +9,17 @@ import {
   TableFooter,
   TablePagination,
   TableRow,
-  IconButton,
   TableHead,
+  IconButton,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import FirstPageIcon from "@mui/icons-material/FirstPage";
+import LastPageIcon from "@mui/icons-material/LastPage";
 import KeyboardArrowLeft from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
-import LastPageIcon from "@mui/icons-material/LastPage";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import PriceHistoryModal from "./PriceHistoryModal";
 
 /* ---------------- Pagination Actions ---------------- */
 function TablePaginationActions(props) {
@@ -63,26 +66,50 @@ function TablePaginationActions(props) {
   );
 }
 
+/* ---------------- Sortable Header ---------------- */
+const SortHeader = ({ label, field, sortBy, order, onSort }) => {
+  const active = sortBy === field;
+
+  return (
+    <TableCell
+      onClick={() => onSort(field)}
+      sx={{ cursor: "pointer", fontWeight: 600 }}
+    >
+      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+        {label}
+        {active &&
+          (order === "asc" ? (
+            <ArrowUpwardIcon color="success" fontSize="small" />
+          ) : (
+            <ArrowDownwardIcon color="error" fontSize="small" />
+          ))}
+      </Box>
+    </TableCell>
+  );
+};
+
 /* ---------------- Main Table ---------------- */
-const PriceTable = ({ data, loading }) => {
+const PriceTable = ({ data, loading, sortBy, order, setSortBy, setOrder }) => {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
+  const [selectedProduct, setSelectedProduct] = React.useState(null);
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64 text-lg">
-        Loading price analysis Report...
-      </div>
-    );
+    return <p className="text-center py-10">Loading...</p>;
   }
 
   if (!data.length) {
-    return (
-      <div className="text-center text-gray-500 py-10">
-        No Product price data available
-      </div>
-    );
+    return <p className="text-center py-10">No data available</p>;
   }
+
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setOrder(order === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(field);
+      setOrder("asc");
+    }
+  };
 
   const visibleRows =
     rowsPerPage > 0
@@ -90,109 +117,118 @@ const PriceTable = ({ data, loading }) => {
       : data;
 
   return (
-    <TableContainer component={Paper} sx={{ mt: 2, maxHeight: "80vh" }}>
-      <Table stickyHeader>
-        {/* 🔹 TABLE HEADER */}
-        <TableHead>
-          <TableRow>
-            <TableCell>
-              <b>Product</b>
-            </TableCell>
-            <TableCell>
-              <b>Brand</b>
-            </TableCell>
-            <TableCell>
-              <b>Old Price</b>
-            </TableCell>
-            <TableCell>
-              <b>Latest Price</b>
-            </TableCell>
-            <TableCell>
-              <b>Change</b>
-            </TableCell>
-            <TableCell>
-              <b>% Change</b>
-            </TableCell>
-            <TableCell align="center">
-              <b>Trend</b>
-            </TableCell>
-          </TableRow>
-        </TableHead>
-
-        <TableBody>
-          {visibleRows.map((item) => (
-            <TableRow key={item.productId} hover>
-              <TableCell>
-                <a
-                  href={item.product_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{ color: "#2563eb", fontWeight: 500 }}
-                >
-                  {item.title}
-                </a>
-              </TableCell>
-
-              <TableCell>{item.brand}</TableCell>
-
-              <TableCell>₹{item.oldPrice}</TableCell>
-
-              <TableCell sx={{ fontWeight: 600 }}>
-                ₹{item.latestPrice}
-              </TableCell>
-
-              <TableCell>₹{item.priceChange}</TableCell>
-
-              <TableCell>{item.percentChange}%</TableCell>
-
+    <>
+      <TableContainer component={Paper} sx={{ mt: 2, maxHeight: "80vh" }}>
+        <Table stickyHeader>
+          <TableHead>
+            <TableRow>
+              <SortHeader
+                label="Product"
+                field="title"
+                {...{ sortBy, order, onSort: handleSort }}
+              />
+              <SortHeader
+                label="Brand"
+                field="brand"
+                {...{ sortBy, order, onSort: handleSort }}
+              />
+              <SortHeader
+                label="Old Price"
+                field="oldPrice"
+                {...{ sortBy, order, onSort: handleSort }}
+              />
+              <SortHeader
+                label="Latest Price"
+                field="latestPrice"
+                {...{ sortBy, order, onSort: handleSort }}
+              />
+              <SortHeader
+                label="Change"
+                field="priceChange"
+                {...{ sortBy, order, onSort: handleSort }}
+              />
+              <SortHeader
+                label="% Change"
+                field="percentChange"
+                {...{ sortBy, order, onSort: handleSort }}
+              />
               <TableCell align="center">
-                <Box
-                  component="span"
-                  sx={{
-                    px: 2,
-                    py: 0.5,
-                    borderRadius: "999px",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    backgroundColor:
-                      item.trend === "PRICE INCREASED"
-                        ? "#fee2e2"
-                        : item.trend === "PRICE DECREASED"
-                        ? "#dcfce7"
-                        : "#e5e7eb",
-                    color:
-                      item.trend === "PRICE INCREASED"
-                        ? "#b91c1c"
-                        : item.trend === "PRICE DECREASED"
-                        ? "#166534"
-                        : "#374151",
-                  }}
-                >
-                  {item.trend}
-                </Box>
+                <b>Trend</b>
               </TableCell>
             </TableRow>
-          ))}
-        </TableBody>
+          </TableHead>
 
-        <TableFooter>
-          <TableRow>
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 25, { label: "All", value: -1 }]}
-              count={data.length}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={(e, newPage) => setPage(newPage)}
-              onRowsPerPageChange={(e) => {
-                setRowsPerPage(parseInt(e.target.value, 10));
-                setPage(0);
-              }}
-              ActionsComponent={TablePaginationActions}
-            />
-          </TableRow>
-        </TableFooter>
-      </Table>
-    </TableContainer>
+          <TableBody>
+            {visibleRows.map((item) => (
+              <TableRow
+                key={item.productId}
+                hover
+                sx={{ cursor: "pointer" }}
+                onClick={() => setSelectedProduct(item)}
+              >
+                <TableCell>{item.title}</TableCell>
+                <TableCell>{item.brand}</TableCell>
+                <TableCell>₹{item.oldPrice}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>
+                  ₹{item.latestPrice}
+                </TableCell>
+                <TableCell>₹{item.priceChange}</TableCell>
+                <TableCell>{item.percentChange}%</TableCell>
+                <TableCell align="center">
+                  <Box
+                    component="span"
+                    sx={{
+                      px: 2,
+                      py: 0.5,
+                      borderRadius: "999px",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      backgroundColor:
+                        item.trend === "INCREASED"
+                          ? "#fee2e2"
+                          : item.trend === "DECREASED"
+                          ? "#dcfce7"
+                          : "#e5e7eb",
+                      color:
+                        item.trend === "INCREASED"
+                          ? "#b91c1c"
+                          : item.trend === "DECREASED"
+                          ? "#166534"
+                          : "#374151",
+                    }}
+                  >
+                    {item.trend}
+                  </Box>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+
+          <TableFooter>
+            <TableRow>
+              <TablePagination
+                rowsPerPageOptions={[5, 10, 25, { label: "All", value: -1 }]}
+                count={data.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={(e, newPage) => setPage(newPage)}
+                onRowsPerPageChange={(e) => {
+                  setRowsPerPage(parseInt(e.target.value, 10));
+                  setPage(0);
+                }}
+                ActionsComponent={TablePaginationActions}
+              />
+            </TableRow>
+          </TableFooter>
+        </Table>
+      </TableContainer>
+
+      <PriceHistoryModal
+        open={!!selectedProduct}
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+      />
+    </>
   );
 };
 

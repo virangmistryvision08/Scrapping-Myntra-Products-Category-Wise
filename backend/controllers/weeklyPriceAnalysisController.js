@@ -2,59 +2,37 @@ const PriceHistory = require("../models/priceHistoryModel");
 
 const weeklyPriceAnalysis = async (req, res) => {
   try {
-    const report = await PriceHistory.aggregate([
-      // 1️⃣ Sort so first = old price, last = latest price
-      { $sort: { scrape_date: 1 } },
+    const {
+      sortBy = "priceChange",
+      order = "desc",
+      trend,
+    } = req.query;
 
-      // 2️⃣ Group by product
+    const sortOrder = order === "asc" ? 1 : -1;
+
+    const pipeline = [
+      { $sort: { scrape_date: 1 } },
       {
         $group: {
           _id: "$product_id",
-          oldPrice: { $first: "$price" },
+          oldPrice: { $first: "$original_price" },
           latestPrice: { $last: "$original_price" },
           oldDate: { $first: "$scrape_date" },
           latestDate: { $last: "$scrape_date" },
         },
       },
-
-      // 3️⃣ Join Product collection
       {
         $lookup: {
-          from: "products",      // collection name (lowercase + plural)
-          localField: "_id",     // product_id
-          foreignField: "_id",   // Product _id
+          from: "products",
+          localField: "_id",
+          foreignField: "_id",
           as: "product",
         },
       },
-
-      // 4️⃣ Convert product array → object
       { $unwind: "$product" },
-
-      // 5️⃣ Final response structure
       {
-        $project: {
-          _id: 0,
-          productId: "$_id",
-
-          // 🧾 Product details
-          title: "$product.title",
-          brand: "$product.brand",
-          rating: "$product.rating",
-          // sizes: "$product.sizes",
-          // images: "$product.images",
-          product_url: "$product.product_url",
-
-          // 📅 Dates
-          oldDate: 1,
-          latestDate: 1,
-
-          // 💰 Prices
-          oldPrice: 1,
-          latestPrice: 1,
-
-          priceChange: {
-            $subtract: ["$latestPrice", "$oldPrice"],
-          },
+        $addFields: {
+          priceChange: { $subtract: ["$latestPrice", "$oldPrice"] },
 
           percentChange: {
             $cond: [
@@ -82,24 +60,64 @@ const weeklyPriceAnalysis = async (req, res) => {
           trend: {
             $cond: [
               { $gt: ["$latestPrice", "$oldPrice"] },
-              "PRICE INCREASED",
+              "INCREASED",
               {
                 $cond: [
                   { $lt: ["$latestPrice", "$oldPrice"] },
-                  "PRICE DECREASED",
-                  "NO CHANGE",
+                  "DECREASED",
+                  "NO_CHANGE",
                 ],
               },
             ],
           },
+
+          trendOrder: {
+            $switch: {
+              branches: [
+                { case: { $gt: ["$latestPrice", "$oldPrice"] }, then: 1 },
+                { case: { $lt: ["$latestPrice", "$oldPrice"] }, then: 2 },
+              ],
+              default: 3,
+            },
+          },
         },
       },
-    ]);
+    ];
+    if (trend) {
+      pipeline.push({
+        $match: { trend },
+      });
+    }
+    pipeline.push({
+      $sort:
+        sortBy === "trend"
+          ? { trendOrder: sortOrder }
+          : { [sortBy]: sortOrder },
+    });
+    pipeline.push({
+      $project: {
+        _id: 0,
+        productId: "$_id",
+        title: "$product.title",
+        brand: "$product.brand",
+        rating: "$product.rating",
+        product_url: "$product.product_url",
+        oldPrice: 1,
+        latestPrice: 1,
+        priceChange: 1,
+        percentChange: 1,
+        trend: 1,
+      },
+    });
+
+    const report = await PriceHistory.aggregate(pipeline).collation({ locale: "en", strength: 2 });
 
     res.json({
       status: true,
-      message: "Weekly Price Analysis with Product Details",
       total: report.length,
+      sortBy,
+      order,
+      trendFilter: trend || "ALL",
       data: report,
     });
   } catch (err) {
