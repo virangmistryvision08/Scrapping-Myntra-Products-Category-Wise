@@ -84,6 +84,7 @@ const weeklyPriceAnalysis = async (req, res) => {
         productId: "$_id",
         title: "$product.title",
         brand: "$product.brand",
+        productUrl: "$product.product_url",
         oldPrice: 1,
         latestPrice: 1,
         priceChange: 1,

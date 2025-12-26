@@ -1,5 +1,3 @@
-const express = require("express");
-const router = express.Router();
 const PriceHistory = require("../models/priceHistoryModel");
 
 const priceHistoryFunc = async (req, res) => {

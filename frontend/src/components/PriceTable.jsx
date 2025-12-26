@@ -196,7 +196,7 @@ const PriceTable = ({ data, loading, sortBy, order, setSortBy, setOrder }) => {
                   setOpen(true);
                 }}
               >
-                <TableCell>{item.title}</TableCell>
+                <TableCell><a className="text-blue-700" href={item.productUrl} target="_blank">{item.title}</a></TableCell>
                 <TableCell>{item.brand}</TableCell>
                 <TableCell>₹{item.oldPrice}</TableCell>
                 <TableCell>₹{item.latestPrice}</TableCell>
