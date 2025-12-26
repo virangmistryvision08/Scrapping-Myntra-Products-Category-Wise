@@ -20,6 +20,7 @@ import FirstPageIcon from "@mui/icons-material/FirstPage";
 import LastPageIcon from "@mui/icons-material/LastPage";
 import KeyboardArrowLeft from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
+import { Spin } from "antd";
 
 /* ---------------- Pagination Actions ---------------- */
 function TablePaginationActions(props) {
@@ -39,10 +40,7 @@ function TablePaginationActions(props) {
   };
 
   const handleLastPageButtonClick = (event) => {
-    onPageChange(
-      event,
-      Math.max(0, Math.ceil(count / rowsPerPage) - 1)
-    );
+    onPageChange(event, Math.max(0, Math.ceil(count / rowsPerPage) - 1));
   };
 
   return (
@@ -94,12 +92,21 @@ function TablePaginationActions(props) {
 const PriceChangeChart = ({ data = [], loading }) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const contentStyle = {
+    padding: 50,
+    background: "rgba(0, 0, 0, 0.05)",
+    borderRadius: 4,
+  };
+  const content = <div style={contentStyle} />;
 
   /* ---------------- LOADING STATE ---------------- */
   if (loading) {
     return (
       <Paper sx={{ p: 3, mb: 4, textAlign: "center" }}>
-        <Typography>Loading price analysis chart...</Typography>
+        {/* <Typography>Loading price analysis chart...</Typography> */}
+        <Spin tip="Loading" size="large">
+          {content}
+        </Spin>
       </Paper>
     );
   }
@@ -122,29 +129,19 @@ const PriceChangeChart = ({ data = [], loading }) => {
       : data;
 
   const chartData = paginatedData.map((item) => ({
-    name:
-      item.title.length > 12
-        ? item.title.slice(0, 12) + "..."
-        : item.title,
+    name: item.title.length > 12 ? item.title.slice(0, 12) + "..." : item.title,
     priceChange: item.priceChange,
   }));
 
   return (
     <Paper sx={{ p: 3, mb: 4 }}>
-
       {/* Bar Chart */}
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis
-            dataKey="name"
-            interval={0}
-            tick={{ fontSize: 12 }}
-          />
+          <XAxis dataKey="name" interval={0} tick={{ fontSize: 12 }} />
           <YAxis />
-          <Tooltip
-            formatter={(value) => [`₹${value}`, "Price Change"]}
-          />
+          <Tooltip formatter={(value) => [`₹${value}`, "Price Change"]} />
           <Bar dataKey="priceChange" fill="#2563eb" />
         </BarChart>
       </ResponsiveContainer>
