@@ -5,28 +5,12 @@ const productSchema = new mongoose.Schema(
     title: {
       type: String,
       trim: true,
-      unique: true
     },
 
     brand: {
       type: String,
       trim: true,
     },
-
-    // price: {
-    //   type: Number,
-    //   trim: true,
-    // },
-
-    // original_price: {
-    //   type: Number,
-    //   trim: true,
-    // },
-
-    // discount: {
-    //   type: String,
-    //   trim: true,
-    // },
 
     rating: {
       type: Number,

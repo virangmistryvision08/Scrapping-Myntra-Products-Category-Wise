@@ -142,7 +142,7 @@ async function scrapeSingleProduct(browser, url) {
     );
 
     // Check And Send Price ALERT
-    await checkAndSendPriceAlert(product._id);
+    await checkAndSendPriceAlert(savedProduct._id);
 
   } catch (err) {
     console.error("❌ Product error:", err.message);

@@ -30,7 +30,7 @@ const checkAndSendPriceAlert = async (productId) => {
 
   console.log(
     `📧 Alert sent → ${product.title} (${
-      diff > 0 ? `HIKE - ₹${product.change}` : `DROP - ₹${product.change}`
+      diff > 0 ? `HIKE - ₹${diff}` : `DROP - ₹${diff}`
     })`
   );
 };
